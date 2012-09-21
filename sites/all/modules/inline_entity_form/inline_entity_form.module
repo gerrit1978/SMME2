@@ -230,7 +230,7 @@ function inline_entity_form_field_widget_settings_form($field, $instance) {
   if (!empty($settings_form)) {
     $element['type_settings'] = array(
       '#type' => 'fieldset',
-      '#title' => t('Inline Entity Form: %type', array('%type' => $entity_info['label'])),
+      '#title' => t('Inline Entity Form: %type', array('%type' => $instance['label'])),
     );
     $element['type_settings'] += $settings_form;
   }
