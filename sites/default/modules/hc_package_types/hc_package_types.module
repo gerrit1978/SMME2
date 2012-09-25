@@ -1,5 +1,23 @@
 <?php
 
+
+/**
+ * Implements hook_menu
+ */
+function hc_package_types_menu() {
+  $items['admin/commerce/config/package'] = array(
+    'title' => 'Package Type settings',
+    'description' => 'Settings for different package types',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('hc_packages_settings_form'),
+    'file' => 'hc_package_types.admin.inc',
+    'access arguments' => array('configure store'),
+  );
+  
+  return $items;
+}
+
+
 /**
  * Implements hook_commerce_cart_attributes_refresh_alter
  */
@@ -29,6 +47,33 @@ function hc_package_types_commerce_cart_attributes_refresh_alter(&$commands, $fo
   /* Execute commands */
   // DEBUG
   // $commands[] = ajax_command_alert('Command has been executed');
+}
+
+
+/**
+ * Implements hook_commerce_cart_product_add()
+ */
+function hc_package_types_commerce_cart_product_add($order, $product, $quantity, $line_item) {
+/*  print "<pre>";
+  print_r($order);
+  print_r($product);
+  print "</pre>";
+  exit();
+*/
+}
+
+
+/**
+ * Implements hook_preprocess_node()
+ */
+function hc_package_types_preprocess_node(&$variables) {
+  if ($variables['type'] != 'team_course_display') {
+    return;
+  }
+  print "<pre>";
+  print_r($variables);
+  print "</pre>";
+  exit();
 }
 
 
