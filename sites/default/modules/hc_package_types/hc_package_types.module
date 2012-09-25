@@ -36,5 +36,5 @@ function hc_package_types_commerce_cart_attributes_refresh_alter(&$commands, $fo
 
 
   /* Execute commands */
-  $commands[] = ajax_command_alert("Some action needs to be done.");
+  $commands[] = ajax_command_alert($output);
 }
