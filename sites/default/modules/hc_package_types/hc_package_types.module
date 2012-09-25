@@ -22,6 +22,21 @@ function hc_package_types_commerce_cart_attributes_refresh_alter(&$commands, $fo
   $widget = $term->field_widget->value();
 
   /* Depending on the widget itself (currently hardcoded), some extra actions are needed: show/hide fields */
+  $output = _hc_package_types_actions($widget);
+
+  $commands[] = ajax_command_prepend('form.commerce-add-to-cart', $output);
+
+  /* Execute commands */
+  // DEBUG
+  // $commands[] = ajax_command_alert('Command has been executed');
+}
+
+
+
+/**
+ * Helper function for defining the actions of the different widgets
+ */
+function _hc_package_types_actions($widget = 'blank_calendar') {
   switch ($widget) {
     case 'fixed_dates':
       $output = "Here a list of selectable dates of group sessions will be shown";
@@ -33,8 +48,6 @@ function hc_package_types_commerce_cart_attributes_refresh_alter(&$commands, $fo
       $output = "Here a blank calendar will be shown";
       break;
   }
-
-
-  /* Execute commands */
-  $commands[] = ajax_command_alert($output);
+  
+  return $output;
 }
