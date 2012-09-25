@@ -22,31 +22,31 @@ function hc_package_types_menu() {
  * Implements hook_commerce_cart_attributes_refresh_alter
  */
 function hc_package_types_commerce_cart_attributes_refresh_alter(&$commands, $form, $form_state) {
-
-  $product = $form_state['default_product'];
+#
+#  $product = $form_state['default_product'];
+#  
+#  // only call this hook for TEAM PACKAGE products
+#  $type = $product->type;
+#  if ($type != 'team_package') {
+#    return;
+#  }
   
-  // only call this hook for TEAM PACKAGE products
-  $type = $product->type;
-  if ($type != 'team_package') {
-    return;
-  }
+#  /* Check if this newly chosen product is associated with a specific PACKAGE TYPE (field_package_type) */
+#  $fields = entity_metadata_wrapper('commerce_product', $product);
+#  $package_type = $fields->field_package_type->value();
   
-  /* Check if this newly chosen product is associated with a specific PACKAGE TYPE (field_package_type) */
-  $fields = entity_metadata_wrapper('commerce_product', $product);
-  $package_type = $fields->field_package_type->value();
-  
-  /* Package type = a taxonomy term object, so define a new wrapper for getting the info */
-  $term = entity_metadata_wrapper('taxonomy_term', $package_type);
-  $widget = $term->field_widget->value();
+#  /* Package type = a taxonomy term object, so define a new wrapper for getting the info */
+#  $term = entity_metadata_wrapper('taxonomy_term', $package_type);
+#  $widget = $term->field_widget->value();
 
-  /* Depending on the widget itself (currently hardcoded), some extra actions are needed: show/hide fields */
-  $output = _hc_package_types_actions($widget);
+#  /* Depending on the widget itself (currently hardcoded), some extra actions are needed: show/hide fields */
+#  $output = _hc_package_types_actions($widget);
 
-  $commands[] = ajax_command_prepend('form.commerce-add-to-cart', $output);
+#  $commands[] = ajax_command_prepend('form.commerce-add-to-cart', $output);
 
-  /* Execute commands */
-  // DEBUG
-  // $commands[] = ajax_command_alert('Command has been executed');
+#  /* Execute commands */
+#  // DEBUG
+#  // $commands[] = ajax_command_alert('Command has been executed');
 }
 
 
@@ -67,7 +67,7 @@ function hc_package_types_commerce_cart_product_add($order, $product, $quantity,
  * Implements hook_preprocess_node()
  */
 function hc_package_types_preprocess_node(&$variables) {
-  if ($variables['type'] != 'team_course_display') {
+  if ($variables['type'] != variable_get('hc_packages_team_package_node_type', '')) {
     return;
   }
   print "<pre>";
