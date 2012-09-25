@@ -24,10 +24,13 @@ function hc_package_types_commerce_cart_attributes_refresh_alter(&$commands, $fo
   /* Depending on the widget itself (currently hardcoded), some extra actions are needed: show/hide fields */
   switch ($widget) {
     case 'fixed_dates':
+      $output = "Here a list of selectable dates of group sessions will be shown";
       break;
     case 'filled_in_calendar':
+      $output = "Here a partially filled in calendar will be shown";
       break;
     case 'blank_calendar':
+      $output = "Here a blank calendar will be shown";
       break;
   }
 
