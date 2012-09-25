@@ -1,0 +1,5 @@
+name           = Package Type Handling
+description    = Provides functionalities for different package types (e.g. based on team size)
+core           = 7.x
+version        = 7.x-1.0
+package        = HedgeComm
