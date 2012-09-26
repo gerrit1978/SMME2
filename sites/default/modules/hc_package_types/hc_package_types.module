@@ -81,6 +81,7 @@ function hc_package_types_form_alter(&$form, &$form_state, $form_id) {
       
       /* Add extra validation for doing the line item stuff right */
       $form['#validate'][] = '_hc_package_validate_package_type';
+      $form['#submit'][] = '_hc_package_submit_package_type';
     }
   }
 }
@@ -175,6 +176,8 @@ function _hc_package_types_options__filled_in_calendar($product_id) {
  *
  * Currently, there are three "widgets": fixed_dates, filled_in_calendar and blank_calendar
  * The extra validation should only be done for specific widgets, currently fixed_dates and filled_in_calendar
+ * 
+ * TODO: only for "team package" product types
  *
  */
 function _hc_package_validate_package_type(&$form, &$form_state) {
@@ -185,10 +188,15 @@ function _hc_package_validate_package_type(&$form, &$form_state) {
   $product_id = $values['product_id'];
   $fields = entity_metadata_wrapper('commerce_product', $product_id);
   
+  $product_type = $fields->type->value();
+  
+  if ($product_type != 'team_package') {
+    return TRUE;
+  }
+  
   $package_type = $fields->field_package_type->value();
   $package_dates = $fields->field_package_dates->value();
 
-  /* Package type = a taxonomy term object, so define a new wrapper for getting the info */
   $term = entity_metadata_wrapper('taxonomy_term', $package_type);
   $widget = $term->field_widget->value();
 
@@ -204,11 +212,7 @@ function _hc_package_validate_package_type(&$form, &$form_state) {
   }
   
   if ($widget == 'filled_in_calendar') {
-/*    print "Je koos voor " . $chosen_date;
-    print "<br />";
-    print "We gaan dit vergelijken met de volgende waarden: <br />";
-    print "<pre>";
-*/
+
     $flag = FALSE;
     foreach ($package_dates as $item) {
       if (isset($item['value'])) {
@@ -226,6 +230,38 @@ function _hc_package_validate_package_type(&$form, &$form_state) {
     }
 
   }
-  
 
+}
+
+
+/**
+ * Helper function: extra submit function for package type
+ *
+ */
+function _hc_package_submit_package_type(&$form, &$form_state) {
+  $values = $form_state['values'];
+
+  $product_id = $values['product_id'];
+  $fields = entity_metadata_wrapper('commerce_product', $product_id);
+  
+  $product_type = $fields->type->value();
+  
+  if ($product_type != 'team_package') {
+    return;
+  }
+  
+  $line_item = entity_metadata_wrapper('commerce_line_item', $form_state['line_item']);
+  
+  // TODO: add date here to line item and save it.
+  
+  print_r($line_item->field_team_package_date->value());
+  exit();
+
+
+  $order = commerce_cart_order_load();
+  print "<pre>";
+  print_r($order);
+  print_r($form_state['line_item']);
+  print "</pre>";
+  exit();
 }
