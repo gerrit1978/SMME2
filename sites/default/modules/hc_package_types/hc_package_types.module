@@ -81,8 +81,8 @@ function hc_package_types_form_alter(&$form, &$form_state, $form_id) {
       
       /* Add extra validation for doing the line item stuff right */
       $form['#validate'][] = '_hc_package_validate_package_type';
-      $form['#submit'][] = '_hc_package_submit_package_type';
     }
+    $form['#submit'][] = '_hc_package_submit_package_type';    
   }
 }
 
@@ -243,35 +243,40 @@ function _hc_package_submit_package_type(&$form, &$form_state) {
   $values = $form_state['values'];
 
   $product_id = $values['product_id'];
-  $product_package_type = $values['product_package_type'];
-  
   $fields = entity_metadata_wrapper('commerce_product', $product_id);
   
   $product_type = $fields->type->value();
-  
-  if ($product_type != 'team_package') {
-    return;
-  }
-  
-  
-  // check if submitted date is an integer ("fixed_dates") or a real date ("filled_in_calendar" or "blank_calendar")
-  $package_type = $fields->field_package_type->value();
-  $package_dates = $fields->field_package_dates->value();
 
-  $term = entity_metadata_wrapper('taxonomy_term', $package_type);
-  $widget = $term->field_widget->value();
-  
-	if ($widget == 'fixed_dates') {
-		$line_item_date = $package_dates[$product_package_type]['value'];
-	} else {
-	  $line_item_date = $product_package_type . " 00:00:00"; 
+	/* For Team Packages */
+	if ($product_type == 'team_package') {
+	  if (isset($values['product_package_type'])) {
+		  $product_package_type = $values['product_package_type'];  
+  	}
+	  // check if submitted date is an integer ("fixed_dates") or a real date ("filled_in_calendar" or "blank_calendar")
+	  $package_type = $fields->field_package_type->value();
+	  $package_dates = $fields->field_package_dates->value();
+	
+	  $term = entity_metadata_wrapper('taxonomy_term', $package_type);
+	  $widget = $term->field_widget->value();
+	  
+		if ($widget == 'fixed_dates') {
+			$line_item_date = $package_dates[$product_package_type]['value'];
+		} else {
+		  $line_item_date = $product_package_type . " 00:00:00"; 
+		}
 	}
-  
+	
+	if ($product_type == 'individual_package') {
+	  $date = $fields->field_session_date->value();
+	  $line_item_date = $date['value'];
+	}
+	
+	  
   
   // get line item
   $line_item = entity_metadata_wrapper('commerce_line_item', $form_state['line_item']);
 
-	$line_item->field_team_package_date->set($line_item_date);
+	$line_item->field_course_line_item_date->set($line_item_date);
 	$line_item->save();
 
 }
