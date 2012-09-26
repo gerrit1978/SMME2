@@ -18,35 +18,6 @@ function hc_package_types_menu() {
 }
 
 
-/**
- * Implements hook_commerce_cart_attributes_refresh_alter
- */
-function hc_package_types_commerce_cart_attributes_refresh_alter(&$commands, $form, $form_state) {
-
-  $product = $form_state['default_product'];
-  
-  // only call this hook for TEAM PACKAGE products
-  $type = $product->type;
-  if ($type != 'team_package') {
-    return;
-  }
-  
-  /* Check if this newly chosen product is associated with a specific PACKAGE TYPE (field_package_type) */
-  $fields = entity_metadata_wrapper('commerce_product', $product);
-  $package_type = $fields->field_package_type->value();
-  
-  /* Package type = a taxonomy term object, so define a new wrapper for getting the info */
-  $term = entity_metadata_wrapper('taxonomy_term', $package_type);
-  $widget = $term->field_widget->value();
-
-  /* Depending on the widget itself (currently hardcoded), some extra actions are needed: show/hide fields */
-  $output = _hc_package_types_actions($widget);
-
-  $commands[] = ajax_command_remove('#choose-package-type .content');
-  $commands[] = ajax_command_prepend('#choose-package-type', $output);
-
-}
-
 
 /**
  * Implements hook_commerce_cart_product_add()
@@ -74,69 +45,43 @@ function hc_package_types_form_alter(&$form, &$form_state, $form_id) {
       
     
       /* Depending on the widget itself (currently hardcoded), some extra actions are needed: show/hide fields */
-      $default_output = _hc_package_types_actions($widget);
+      $default_form_element = _hc_package_types_form_element($product_id, $widget);
     
-      $form['product_package_type']['#suffix'] = '<div id="choose-package-type">' . $default_output . '</div>';
-      $form['product_package_type']['#weight'] = '20';
+      $form['product_package_type'] = $default_form_element;
     }
   }
 }
 
 
-/**
- * Implements hook_preprocess_node()
- */
-function hc_package_types_preprocess_node(&$variables) {
-
-#  if ($variables['type'] != variable_get('hc_packages_team_package_node_type', '')) {
-#    return;
-#  }
-    
-  /* Check for the "default" product variation 
-  $default_product = $variables['elements']['product:commerce_price']['#object'];
-  $fields = entity_metadata_wrapper('commerce_product', $default_product);
-  $package_type = $fields->field_package_type->value();
-
-  /* Package type = a taxonomy term object, so define a new wrapper for getting the info 
-  $term = entity_metadata_wrapper('taxonomy_term', $package_type);
-  $widget = $term->field_widget->value();
-  
-
-  /* Depending on the widget itself (currently hardcoded), some extra actions are needed: show/hide fields 
-  $default_output = _hc_package_types_actions($widget);
-/*
-  $variables['content']['product:choose_package_type'] = array(
-    '#markup' => '<div id="choose-package-type">' . $default_output . '</div>',
-    '#weight' => '10',
-  );
-  */
-//  exit();
-
-}
-
-
 
 /**
- * Helper function for defining the actions of the different widgets
+ * Helper function for adding form elements
  */
-function _hc_package_types_actions($widget = 'blank_calendar') {
+function _hc_package_types_form_element($entity_id, $widget = 'blank_calendar') {
 
-  $output = '<div class="content">';
+  $element = array();
+
+  $element['#prefix'] = 'Below is the form element<br /><div id="choose-package-type-container">';
+  $element['#suffix'] = '</div>';
+  $element['#weight'] = '20';
 
   switch ($widget) {
     case 'fixed_dates':
-      $output .= "Here a list of selectable dates of group sessions will be shown";
+      $element['#type'] = 'select';
+      $element['#options'] = array('Eerste', 'Tweede');
       break;
     case 'filled_in_calendar':
-      $output .= "Here a partially filled in calendar will be shown";
+      $element['#type'] = 'textfield';
       break;
     case 'blank_calendar':
     default:
-      $output .= "Here a blank calendar will be shown";
+      $element['#type'] = 'date_popup';
+      
+      // TODO: REGION-SPECIFIC!
+      $element['#date_format'] = 'm.d.Y';
       break;
   }
   
-  $output .= '</div>';
+  return $element;
   
-  return $output;
 }
