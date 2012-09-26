@@ -22,31 +22,29 @@ function hc_package_types_menu() {
  * Implements hook_commerce_cart_attributes_refresh_alter
  */
 function hc_package_types_commerce_cart_attributes_refresh_alter(&$commands, $form, $form_state) {
-#
-#  $product = $form_state['default_product'];
-#  
-#  // only call this hook for TEAM PACKAGE products
-#  $type = $product->type;
-#  if ($type != 'team_package') {
-#    return;
-#  }
+
+  $product = $form_state['default_product'];
   
-#  /* Check if this newly chosen product is associated with a specific PACKAGE TYPE (field_package_type) */
-#  $fields = entity_metadata_wrapper('commerce_product', $product);
-#  $package_type = $fields->field_package_type->value();
+  // only call this hook for TEAM PACKAGE products
+  $type = $product->type;
+  if ($type != 'team_package') {
+    return;
+  }
   
-#  /* Package type = a taxonomy term object, so define a new wrapper for getting the info */
-#  $term = entity_metadata_wrapper('taxonomy_term', $package_type);
-#  $widget = $term->field_widget->value();
+  /* Check if this newly chosen product is associated with a specific PACKAGE TYPE (field_package_type) */
+  $fields = entity_metadata_wrapper('commerce_product', $product);
+  $package_type = $fields->field_package_type->value();
+  
+  /* Package type = a taxonomy term object, so define a new wrapper for getting the info */
+  $term = entity_metadata_wrapper('taxonomy_term', $package_type);
+  $widget = $term->field_widget->value();
 
-#  /* Depending on the widget itself (currently hardcoded), some extra actions are needed: show/hide fields */
-#  $output = _hc_package_types_actions($widget);
+  /* Depending on the widget itself (currently hardcoded), some extra actions are needed: show/hide fields */
+  $output = _hc_package_types_actions($widget);
 
-#  $commands[] = ajax_command_prepend('form.commerce-add-to-cart', $output);
+  $commands[] = ajax_command_remove('#choose-package-type .content');
+  $commands[] = ajax_command_prepend('#choose-package-type', $output);
 
-#  /* Execute commands */
-#  // DEBUG
-#  // $commands[] = ajax_command_alert('Command has been executed');
 }
 
 
@@ -54,12 +52,34 @@ function hc_package_types_commerce_cart_attributes_refresh_alter(&$commands, $fo
  * Implements hook_commerce_cart_product_add()
  */
 function hc_package_types_commerce_cart_product_add($order, $product, $quantity, $line_item) {
-/*  print "<pre>";
-  print_r($order);
-  print_r($product);
-  print "</pre>";
-  exit();
-*/
+}
+
+
+/**
+ * Implements hook_form_alter
+ */
+function hc_package_types_form_alter(&$form, &$form_state, $form_id) {
+  if (strstr($form_id, 'commerce_cart_add_to_cart_form')) {
+    if (isset($form['attributes']['field_package_type'])) {
+      $product_id = $form['product_id']['#value'];
+      $default_product = commerce_product_load($product_id);
+    
+      $fields = entity_metadata_wrapper('commerce_product', $default_product);
+      
+      $package_type = $fields->field_package_type->value();
+    
+      /* Package type = a taxonomy term object, so define a new wrapper for getting the info */
+      $term = entity_metadata_wrapper('taxonomy_term', $package_type);
+      $widget = $term->field_widget->value();
+      
+    
+      /* Depending on the widget itself (currently hardcoded), some extra actions are needed: show/hide fields */
+      $default_output = _hc_package_types_actions($widget);
+    
+      $form['product_package_type']['#suffix'] = '<div id="choose-package-type">' . $default_output . '</div>';
+      $form['product_package_type']['#weight'] = '20';
+    }
+  }
 }
 
 
@@ -67,13 +87,31 @@ function hc_package_types_commerce_cart_product_add($order, $product, $quantity,
  * Implements hook_preprocess_node()
  */
 function hc_package_types_preprocess_node(&$variables) {
-  if ($variables['type'] != variable_get('hc_packages_team_package_node_type', '')) {
-    return;
-  }
-  print "<pre>";
-  print_r($variables);
-  print "</pre>";
-  exit();
+
+#  if ($variables['type'] != variable_get('hc_packages_team_package_node_type', '')) {
+#    return;
+#  }
+    
+  /* Check for the "default" product variation 
+  $default_product = $variables['elements']['product:commerce_price']['#object'];
+  $fields = entity_metadata_wrapper('commerce_product', $default_product);
+  $package_type = $fields->field_package_type->value();
+
+  /* Package type = a taxonomy term object, so define a new wrapper for getting the info 
+  $term = entity_metadata_wrapper('taxonomy_term', $package_type);
+  $widget = $term->field_widget->value();
+  
+
+  /* Depending on the widget itself (currently hardcoded), some extra actions are needed: show/hide fields 
+  $default_output = _hc_package_types_actions($widget);
+/*
+  $variables['content']['product:choose_package_type'] = array(
+    '#markup' => '<div id="choose-package-type">' . $default_output . '</div>',
+    '#weight' => '10',
+  );
+  */
+//  exit();
+
 }
 
 
@@ -82,17 +120,23 @@ function hc_package_types_preprocess_node(&$variables) {
  * Helper function for defining the actions of the different widgets
  */
 function _hc_package_types_actions($widget = 'blank_calendar') {
+
+  $output = '<div class="content">';
+
   switch ($widget) {
     case 'fixed_dates':
-      $output = "Here a list of selectable dates of group sessions will be shown";
+      $output .= "Here a list of selectable dates of group sessions will be shown";
       break;
     case 'filled_in_calendar':
-      $output = "Here a partially filled in calendar will be shown";
+      $output .= "Here a partially filled in calendar will be shown";
       break;
     case 'blank_calendar':
-      $output = "Here a blank calendar will be shown";
+    default:
+      $output .= "Here a blank calendar will be shown";
       break;
   }
+  
+  $output .= '</div>';
   
   return $output;
 }
