@@ -1,10 +1,32 @@
 <?php
 
+/**
+ * @file
+ *
+ */
+
+/************************************************************************************
+ * Drupal Hook Implementations
+ ***********************************************************************************/
+
+
+/**
+ * Implements hook_init
+ */
+function hc_package_types_init() {
+  drupal_add_library('system', 'ui.datepicker');
+  $path = drupal_get_path('module', 'hc_package_types') . '/js';
+  drupal_add_js($path . '/hc_package_types.js');
+}
+
+
 
 /**
  * Implements hook_menu
  */
 function hc_package_types_menu() {
+
+  // admin screen 
   $items['admin/commerce/config/package'] = array(
     'title' => 'Package Type settings',
     'description' => 'Settings for different package types',
@@ -12,6 +34,14 @@ function hc_package_types_menu() {
     'page arguments' => array('hc_packages_settings_form'),
     'file' => 'hc_package_types.admin.inc',
     'access arguments' => array('configure store'),
+  );
+  
+  $items['hc_package_types/get_dates/%'] = array(
+    'title' => '',
+    'description' => '',
+    'page callback' => '_hc_package_types_options__filled_in_calendar',
+    'page arguments' => array(2),
+    'access arguments' => array('access content'),
   );
   
   return $items;
@@ -48,30 +78,43 @@ function hc_package_types_form_alter(&$form, &$form_state, $form_id) {
       $default_form_element = _hc_package_types_form_element($product_id, $widget);
     
       $form['product_package_type'] = $default_form_element;
+      
+      /* Add extra validation for doing the line item stuff right */
+      $form['#validate'][] = '_hc_package_validate_package_type';
     }
   }
 }
+
+
+/************************************************************************************
+ * Internal Helper Functions
+ ***********************************************************************************/
 
 
 
 /**
  * Helper function for adding form elements
  */
-function _hc_package_types_form_element($entity_id, $widget = 'blank_calendar') {
+function _hc_package_types_form_element($product_id, $widget = 'blank_calendar') {
 
   $element = array();
 
-  $element['#prefix'] = 'Below is the form element<br /><div id="choose-package-type-container">';
-  $element['#suffix'] = '</div>';
   $element['#weight'] = '20';
 
   switch ($widget) {
     case 'fixed_dates':
       $element['#type'] = 'select';
-      $element['#options'] = array('Eerste', 'Tweede');
+      $element['#options'] = _hc_package_types_options__fixed_dates($product_id);
+      
       break;
     case 'filled_in_calendar':
-      $element['#type'] = 'textfield';
+      $element['#type'] = 'date_popup';
+      $element['#prefix'] = '<div class="filled_in_calendar">';
+      $element['#suffix'] = '</div>';
+      
+      // TODO: REGION-SPECIFIC
+      $element['#date_format'] = 'm.d.Y';
+      
       break;
     case 'blank_calendar':
     default:
@@ -84,4 +127,105 @@ function _hc_package_types_form_element($entity_id, $widget = 'blank_calendar') 
   
   return $element;
   
+}
+
+
+/**
+ * Helper function for options : _hc_package_types_options__WIDGET_NAME()
+ */
+function _hc_package_types_options__fixed_dates($product_id) {
+  $options = array();
+  
+  $fields = entity_metadata_wrapper('commerce_product', $product_id);
+  $dates = $fields->field_package_dates->value();
+  
+  if (is_array($dates)) {
+    foreach ($dates as $date) {
+      $time = strtotime($date['value']);
+      $timezone = $date['timezone'];
+      $formatted_date = format_date($time, 'custom', 'm.d.Y', $timezone);
+      $options[] = $formatted_date;
+    }
+  }
+
+  return $options;
+
+}
+
+
+/**
+ * Helper function for returning available dates for a specific product
+ */
+function _hc_package_types_options__filled_in_calendar($product_id) {
+  $fields = entity_metadata_wrapper('commerce_product', $product_id);
+  $dates = $fields->field_package_dates->value();
+  
+  foreach ($dates as $date) {
+    $time = strtotime($date['value']);
+      $timezone = $date['timezone'];
+      $formatted_date = format_date($time, 'custom', 'n.j.Y', $timezone);
+      $available_dates[$formatted_date] = $formatted_date;
+  }
+  drupal_json_output($available_dates);
+}
+
+
+/** 
+ * Helper function: extra validation function for package type
+ *
+ * Currently, there are three "widgets": fixed_dates, filled_in_calendar and blank_calendar
+ * The extra validation should only be done for specific widgets, currently fixed_dates and filled_in_calendar
+ *
+ */
+function _hc_package_validate_package_type(&$form, &$form_state) {
+  $values = $form_state['values'];
+  $chosen_date = $values['product_package_type'];
+  
+  
+  $product_id = $values['product_id'];
+  $fields = entity_metadata_wrapper('commerce_product', $product_id);
+  
+  $package_type = $fields->field_package_type->value();
+  $package_dates = $fields->field_package_dates->value();
+
+  /* Package type = a taxonomy term object, so define a new wrapper for getting the info */
+  $term = entity_metadata_wrapper('taxonomy_term', $package_type);
+  $widget = $term->field_widget->value();
+
+  if ($widget == 'blank_calendar') {
+    return TRUE;
+  } 
+  
+  if ($widget == 'fixed_dates') {
+    if (!(isset($package_dates[$chosen_date]['value']))) {
+      form_set_error('product_package_type', t('Please make a choice.'));
+      return FALSE;
+    }
+  }
+  
+  if ($widget == 'filled_in_calendar') {
+/*    print "Je koos voor " . $chosen_date;
+    print "<br />";
+    print "We gaan dit vergelijken met de volgende waarden: <br />";
+    print "<pre>";
+*/
+    $flag = FALSE;
+    foreach ($package_dates as $item) {
+      if (isset($item['value'])) {
+        $date_short = substr($item['value'], 0, 10);
+        if ($chosen_date === $date_short) {
+          $flag = TRUE;
+        }
+      }
+    }
+    if (!$flag) {
+      form_set_error('product_package_type', t('Please make a valid choice'));
+      return FALSE;
+    } else {
+      return TRUE;
+    }
+
+  }
+  
+
 }
