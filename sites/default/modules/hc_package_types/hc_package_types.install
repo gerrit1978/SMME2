@@ -1,0 +1,25 @@
+<?php
+
+
+/**
+ * Implements hook_install
+ */
+function hc_package_types_install() {
+
+  $widgets = array(
+    'fixed_dates' => array(
+      'name' => 'fixed_dates',
+      'description' => t('A list of fixed dates'),
+    ),
+    'filled_in_calendar' => array(
+      'name' => 'filled_in_calendar',
+      'description' => t('A partially filled in calendar'),
+    ),
+    'blank_calendar' => array(
+      'name' => 'blank_calendar',
+      'description' => t('An empty calendar to choose from'),
+    ),
+  );
+  
+  variable_set('hc_package_types_widgets', serialize($widgets));
+}
