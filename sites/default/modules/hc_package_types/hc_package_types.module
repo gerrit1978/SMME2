@@ -14,9 +14,33 @@
  * Implements hook_init
  */
 function hc_package_types_init() {
+
+  /* TODO: move this into widget system */
   drupal_add_library('system', 'ui.datepicker');
-  $path = drupal_get_path('module', 'hc_package_types') . '/js';
-  drupal_add_js($path . '/hc_package_types.js');
+  /* TODO */
+  
+  $widgets = unserialize(variable_get('hc_package_types_widgets', array()));
+  
+  // include widget files
+  foreach ($widgets as $widget) {
+    if (isset($widget['module'])) {
+      $path = drupal_get_path('module', $widget['module']) . '/widgets/';
+      $filename = $widget['module'] . '__' . $widget['name'] . '.widget.inc';
+      if (file_exists($path . $filename)) {
+        require_once($path . $filename);
+      }
+    }
+  }
+  
+  // add JS files if necessary
+  foreach ($widgets as $widget) {
+    $path = drupal_get_path('module', $widget['module']) . '/widgets/';
+    $filename_js = $widget['module'] . '__' . $widget['name'] . '.widget.js';
+    if (file_exists($path . $filename_js)) {
+      drupal_add_js($path . $filename_js);
+    }
+  }
+  
 }
 
 
@@ -25,6 +49,7 @@ function hc_package_types_init() {
  */
 function hc_package_types_menu() {
 
+  /* CAN BE REMOVED */
   // admin screen 
   $items['admin/commerce/config/package'] = array(
     'title' => 'Package Type settings',
@@ -34,14 +59,17 @@ function hc_package_types_menu() {
     'file' => 'hc_package_types.admin.inc',
     'access arguments' => array('configure store'),
   );
+  /* CAN BE REMOVED */
   
-  $items['hc_package_types/get_dates/%'] = array(
-    'title' => '',
-    'description' => '',
-    'page callback' => '_hc_package_types_options__filled_in_calendar',
-    'page arguments' => array(2),
-    'access arguments' => array('access content'),
-  );
+
+  $widgets = unserialize(variable_get('hc_package_types_widgets', array()));
+  
+  foreach ($widgets as $widget) {
+    $function_menu = $widget['module'] . '__' . $widget['name'] . '__menu';
+    if (function_exists($function_menu)) {
+      $items += $function_menu();
+    }
+  }
   
   return $items;
 }
@@ -60,8 +88,9 @@ function hc_package_types_commerce_cart_product_add($order, $product, $quantity,
  */
 function hc_package_types_form_alter(&$form, &$form_state, $form_id) {
 
-
   if (strstr($form_id, 'commerce_cart_add_to_cart_form')) {
+    $widgets = unserialize(variable_get('hc_package_types_widgets', array()));
+    
     if (isset($form['attributes']['field_package_type'])) {
       $product_id = $form['product_id']['#value'];
       $default_product = commerce_product_load($product_id);
@@ -72,18 +101,33 @@ function hc_package_types_form_alter(&$form, &$form_state, $form_id) {
     
       /* Package type = a taxonomy term object, so define a new wrapper for getting the info */
       $term = entity_metadata_wrapper('taxonomy_term', $package_type);
-      $widget = $term->field_widget->value();
+      $widget = $term->field_team_package_type_widget->value();
       
-    
-      /* Depending on the widget itself (currently hardcoded), some extra actions are needed: show/hide fields */
-      $default_form_element = _hc_package_types_form_element($product_id, $widget);
-    
-      $form['product_package_type'] = $default_form_element;
+      /* Render the default element for this widget */
+      $function_default_form_element = $widgets[$widget]['module'] . "__" . $widgets[$widget]['name'] . "__default_form_element";
       
-      /* Add extra validation for doing the line item stuff right */
-      $form['#validate'][] = '_hc_package_validate_package_type';
+      if (function_exists($function_default_form_element)) {
+        $form['product_package_type'] = $function_default_form_element($product_id);
+      }      
+      
+      /* Add extra validation and/or submit function to the form for this widget */
+      $function_validate = $widgets[$widget]['module'] . "__" . $widgets[$widget]['name'] . "__validate";
+      
+      if (function_exists($function_validate)) {
+        $form['#validate'][] = $function_validate;
+      }
+      
+      $function_submit = $widgets[$widget]['module'] . "__" . $widgets[$widget]['name'] . "__submit";
+      
+      if (function_exists($function_submit)) {
+        $form['#submit'][] = $function_submit;
+      }
     }
-    $form['#submit'][] = '_hc_package_submit_package_type';    
+    
+    // add generic validation and submit functions
+    $form['#validate'][] = '_hc_package_validate';
+    $form['#submit'][] = '_hc_package_submit';
+      
   }
 }
 
@@ -92,147 +136,11 @@ function hc_package_types_form_alter(&$form, &$form_state, $form_id) {
  * Internal Helper Functions
  ***********************************************************************************/
 
-
-
 /**
- * Helper function for adding form elements
+ * Generic validate function for Add to cart form
  */
-function _hc_package_types_form_element($product_id, $widget = 'blank_calendar') {
-
-  $element = array();
-
-  $element['#weight'] = '20';
-
-  switch ($widget) {
-    case 'fixed_dates':
-      $element['#type'] = 'select';
-      $element['#options'] = _hc_package_types_options__fixed_dates($product_id);
-      
-      break;
-    case 'filled_in_calendar':
-      $element['#type'] = 'date_popup';
-      $element['#prefix'] = '<div class="filled_in_calendar">';
-      $element['#suffix'] = '</div>';
-      
-      // TODO: REGION-SPECIFIC
-      $element['#date_format'] = 'm.d.Y';
-      
-      break;
-    case 'blank_calendar':
-    default:
-      $element['#type'] = 'date_popup';
-      
-      // TODO: REGION-SPECIFIC!
-      $element['#date_format'] = 'm.d.Y';
-      break;
-  }
-  
-  return $element;
-  
-}
-
-
-/**
- * Helper function for options : _hc_package_types_options__WIDGET_NAME()
- */
-function _hc_package_types_options__fixed_dates($product_id) {
-  $options = array();
-  
-  $fields = entity_metadata_wrapper('commerce_product', $product_id);
-  $dates = $fields->field_package_dates->value();
-  
-  if (is_array($dates)) {
-    foreach ($dates as $date) {
-      $time = strtotime($date['value']);
-      $timezone = $date['timezone'];
-      $formatted_date = format_date($time, 'custom', 'm.d.Y', $timezone);
-      $options[] = $formatted_date;
-    }
-  }
-
-  return $options;
-
-}
-
-
-/**
- * Helper function for returning available dates for a specific product
- */
-function _hc_package_types_options__filled_in_calendar($product_id) {
-  $fields = entity_metadata_wrapper('commerce_product', $product_id);
-  $dates = $fields->field_package_dates->value();
-  
-  foreach ($dates as $date) {
-    $time = strtotime($date['value']);
-      $timezone = $date['timezone'];
-      $formatted_date = format_date($time, 'custom', 'n.j.Y', $timezone);
-      $available_dates[$formatted_date] = $formatted_date;
-  }
-  drupal_json_output($available_dates);
-}
-
-
-/** 
- * Helper function: extra validation function for package type
- *
- * Currently, there are three "widgets": fixed_dates, filled_in_calendar and blank_calendar
- * The extra validation should only be done for specific widgets, currently fixed_dates and filled_in_calendar
- * 
- * TODO: only for "team package" product types
- *
- */
-function _hc_package_validate_package_type(&$form, &$form_state) {
-  $values = $form_state['values'];
-  $chosen_date = $values['product_package_type'];
-  
-  
-  $product_id = $values['product_id'];
-  $fields = entity_metadata_wrapper('commerce_product', $product_id);
-  
-  $product_type = $fields->type->value();
-  
-  if ($product_type != 'team_package') {
-    return TRUE;
-  }
-  
-  $package_type = $fields->field_package_type->value();
-  $package_dates = $fields->field_package_dates->value();
-
-  $term = entity_metadata_wrapper('taxonomy_term', $package_type);
-  $widget = $term->field_widget->value();
-
-  if ($widget == 'blank_calendar') {
-    return TRUE;
-  } 
-  
-  if ($widget == 'fixed_dates') {
-    if (!(isset($package_dates[$chosen_date]['value']))) {
-      form_set_error('product_package_type', t('Please make a choice.'));
-      return FALSE;
-    }
-  }
-  
-  if ($widget == 'filled_in_calendar') {
-
-
-    $flag = FALSE;
-    foreach ($package_dates as $item) {
-      if (isset($item['value'])) {
-        $date_short = substr($item['value'], 0, 10);
-        if ($chosen_date === $date_short) {
-          $flag = TRUE;
-        }
-      }
-    }
-    if (!$flag) {
-      form_set_error('product_package_type', t('Please make a valid choice'));
-      return FALSE;
-    } else {
-      return TRUE;
-    }
-
-  }
-
+function _hc_package_validate(&$form, &$form_state) {
+  return TRUE;
 }
 
 
@@ -240,7 +148,7 @@ function _hc_package_validate_package_type(&$form, &$form_state) {
  * Helper function: extra submit function for package type
  *
  */
-function _hc_package_submit_package_type(&$form, &$form_state) {
+function _hc_package_submit(&$form, &$form_state) {
   $values = $form_state['values'];
 
   $product_id = $values['product_id'];
@@ -248,44 +156,16 @@ function _hc_package_submit_package_type(&$form, &$form_state) {
   
   $product_type = $fields->type->value();
 
-	/* For Team Packages */
-	if ($product_type == 'team_package') {
-	  if (isset($values['product_package_type'])) {
-		  $product_package_type = $values['product_package_type'];  
-  	}
-	  // check if submitted date is an integer ("fixed_dates") or a real date ("filled_in_calendar" or "blank_calendar")
-	  $package_type = $fields->field_package_type->value();
-	  $package_dates = $fields->field_package_dates->value();
-	
-	  $term = entity_metadata_wrapper('taxonomy_term', $package_type);
-	  $widget = $term->field_widget->value();
-	  
-		if ($widget == 'fixed_dates') {
-			$line_item_date = $package_dates[$product_package_type]['value'];
-		} else if ($widget == 'filled_in_calendar') {
-		  if (is_array($package_dates)) {
-		    foreach ($package_dates as $date) {
-		      if ($product_package_type == substr($date['value'], 0, 10)) {
-						$line_item_date = $date['value'];		      
-		      }
-		    } 
-		  }
-		} else {
-		  $line_item_date = $product_package_type . " 00:00:00"; 
-		}
-	}
-	
+  // for individual packages
 	if ($product_type == 'individual_package') {
 	  $date = $fields->field_session_date->value();
 	  $line_item_date = $date['value'];
-	}
-	
-	  
+
+    // get line item
+    $line_item = entity_metadata_wrapper('commerce_line_item', $form_state['line_item']);
   
-  // get line item
-  $line_item = entity_metadata_wrapper('commerce_line_item', $form_state['line_item']);
+  	$line_item->field_course_line_item_date->set($line_item_date);
+  	$line_item->save();
 
-	$line_item->field_course_line_item_date->set($line_item_date);
-	$line_item->save();
-
+	}
 }

@@ -4,7 +4,7 @@
  */
 
 (function ($) {
-
+/*
   Drupal.behaviors.cal_restrict_selection = {
     attach : function(context) {
       if (!$('body', context)) {
@@ -47,6 +47,6 @@
 	    }
     }
   };
-
+*/
 
 })(jQuery);
