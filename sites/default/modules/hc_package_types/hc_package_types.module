@@ -261,6 +261,14 @@ function _hc_package_submit_package_type(&$form, &$form_state) {
 	  
 		if ($widget == 'fixed_dates') {
 			$line_item_date = $package_dates[$product_package_type]['value'];
+		} else if ($widget == 'filled_in_calendar') {
+		  if (is_array($package_dates)) {
+		    foreach ($package_dates as $date) {
+		      if ($product_package_type == substr($date['value'], 0, 10)) {
+						$line_item_date = $date['value'];		      
+		      }
+		    } 
+		  }
 		} else {
 		  $line_item_date = $product_package_type . " 00:00:00"; 
 		}
