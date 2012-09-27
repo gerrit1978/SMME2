@@ -13,14 +13,16 @@
       
       $('.filled_in_calendar input').attr('disabled', true);
   
-      _event_days = "";
+      _event_days = {};
   
       var productId = $('input[name=product_id]').val();
 
 			// HARDCODE FOR DEBUGGING!     
-      var currentPackage = $('.form-item-attributes-field-package-type > select option:selected').val();
+//    var currentPackage = $('.form-item-attributes-field-package-type > select option:selected').val();
+//    if (productId && currentPackage == '8') {  
 
-      if (productId && currentPackage == '8') {  
+			if (productId) {
+
 	      $.getJSON(Drupal.settings.basePath + 'hc_package_types/get_dates/' + productId, {}, function(data, textStatus, jqXHR) {
 	          _event_days = data;
 	          $('.filled_in_calendar input').attr('disabled', false);
