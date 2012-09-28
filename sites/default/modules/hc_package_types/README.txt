@@ -4,4 +4,5 @@
 
 # TODO
 - make sure date formats are ok
+- time zone handling
 - region functionalities
