@@ -110,6 +110,14 @@ function hc_package_types_form_alter(&$form, &$form_state, $form_id) {
         $form['product_package_type'] = $function_default_form_element($product_id);
       }      
       
+      
+      /* Add widget type to hidden field of this form */
+      $form['widget_type'] = array(
+        '#type' => 'hidden',
+        '#value' => $widgets[$widget]['name'],
+      );
+      
+      
       /* Add extra validation and/or submit function to the form for this widget */
       $function_validate = $widgets[$widget]['module'] . "__" . $widgets[$widget]['name'] . "__validate";
       

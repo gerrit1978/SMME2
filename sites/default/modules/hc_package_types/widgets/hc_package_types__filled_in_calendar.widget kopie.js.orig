@@ -4,7 +4,7 @@
  */
 
 (function ($) {
-
+/*
   Drupal.behaviors.cal_restrict_selection = {
     attach : function(context) {
       if (!$('body', context)) {
@@ -13,12 +13,17 @@
       
       $('.filled_in_calendar input').attr('disabled', true);
   
+      _event_days = {};
+  
       var productId = $('input[name=product_id]').val();
-			var widgetType = $('input[name=widget_type]').val();
 
-			if (productId && widgetType == 'filled_in_calendar') {
+			// HARDCODE FOR DEBUGGING!     
+//    var currentPackage = $('.form-item-attributes-field-package-type > select option:selected').val();
+//    if (productId && currentPackage == '8') {  
 
-	      $.getJSON(Drupal.settings.basePath + 'hc_package_types/filled_in_calendar/get_dates/' + productId, {}, function(data, textStatus, jqXHR) {
+			if (productId) {
+
+	      $.getJSON(Drupal.settings.basePath + 'hc_package_types/get_dates/' + productId, {}, function(data, textStatus, jqXHR) {
 	          _event_days = data;
 	          $('.filled_in_calendar input').attr('disabled', false);
 	      });
@@ -30,6 +35,8 @@
 	      
 	        beforeShowDay: function(date) { 
 	          var day = (date.getMonth()+1) + '.' + date.getDate() + '.' + date.getFullYear();
+	          var output = day + ": " + _event_days[day];
+//	          alert(output);
 	          if (_event_days[day])  {
 	            return [true];
 	          } else {
@@ -40,5 +47,6 @@
 	    }
     }
   };
+*/
 
 })(jQuery);
