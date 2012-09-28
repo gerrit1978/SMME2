@@ -50,6 +50,21 @@ function hc_package_types__blank_calendar__default_form_element($product_id) {
  * Subhook validation function
  */
 function hc_package_types__blank_calendar__validate(&$form, &$form_state) {
+
+  // check if the chosen date is in the future
+  $values = $form_state['values'];
+  $chosen_date = $values['product_package_type'];
+  
+  $chosen_time = strtotime($chosen_date);
+
+	$now = time();
+	
+	// difference between chosen_time and now must be NEGATIVE for future dates
+	if (($now - $chosen_time) > 0) {
+	  form_set_error('product_package_type', t('Please make sure you choose a date in the future.'));
+	  return FALSE;
+	}
+
   return TRUE;
 }
 
