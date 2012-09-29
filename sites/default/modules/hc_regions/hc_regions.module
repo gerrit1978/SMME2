@@ -61,6 +61,15 @@ function hc_regions_init() {
 }
 
 
+/**
+ * Implements hook_views_api
+ */
+function hc_regions_views_api() {
+  return array(
+    'api' => 3,
+  );
+}
+
 
 /**
  * Implements hook_block_info
