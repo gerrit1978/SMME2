@@ -9,6 +9,60 @@
 
 
 /**
+ * Implements hook_init
+ */
+function hc_regions_init() {
+
+  // include javascript and css for form
+  $path = drupal_get_path('module', 'hc_regions');
+  drupal_add_js($path . '/js/hc_regions.js');
+  drupal_add_css($path . '/css/hc_regions.css');
+
+
+  // add region variable to session, if not existing   
+  if (!isset($_SESSION) || (!isset($_SESSION['user_location'])) || (!is_array($_SESSION['user_location']))) { 
+
+
+    include_once(DRUPAL_ROOT . '/includes/locale.inc');
+
+    $ip = $_SERVER['REMOTE_ADDR'];
+    
+    // debugging
+    $ip = "94.225.65.211";
+    //$ip = "202.175.128.234"; // New Zealand
+    
+    $country_code = ip2country_get_country($ip);
+    
+    $country_list = country_get_list();
+    $country_name = $country_list[$country_code];
+  
+    $continent_code = _hc_regions_country_to_continent($country_code);
+
+    switch ($continent_code) {
+      case 'SA':
+      case 'AF':
+      case 'OC':
+        $continent_code = 'NA';
+        break;
+    }
+
+    $continent_name = _hc_regions_continent_code_to_continent_name($continent_code);
+    
+    $user_location = array(
+      'country_code' => $country_code,
+      'country_name' => $country_name,
+      'continent_code' => $continent_code,
+      'continent_name' => $continent_name,
+    );
+
+    $_SESSION['user_location'] = $user_location;
+  }
+
+}
+
+
+
+/**
  * Implements hook_block_info
  */
 function hc_regions_block_info() {
@@ -30,7 +84,7 @@ function hc_regions_block_view($delta = "") {
   
   switch ($delta) {
     case 'region-selection':
-      $block['subject'] = 'My Current Region';
+      $block['subject'] = '';
       $block['content'] = _hc_regions_block_region_selection();
   }
   
@@ -42,21 +96,99 @@ function hc_regions_block_view($delta = "") {
  * Helper function for rendering region selection block
  */
 function _hc_regions_block_region_selection() {
-
-  $ip = $_SERVER['REMOTE_ADDR'];
   
-  // debugging
-  $ip = "94.225.65.211";
+  $output = drupal_get_form('hc_regions_select_region_form');
+
+  return $output;
+
+
+}
+
+
+
+
+/**
+ * Drupal Form for selecting region
+ */
+function hc_regions_select_region_form($form, &$form_state) {
+
+  if (!isset($_SESSION) || (!isset($_SESSION['user_location'])) || (!is_array($_SESSION['user_location']))) { 
+    return array();
+  }
   
-  $country_code = ip2country_get_country($ip);
+  $user_location = $_SESSION['user_location'];
+  $continent_code = $user_location['continent_code'];
+  $continent_name = $user_location['continent_name'];
+  $country_code = $user_location['country_code'];
+  $country_name = $user_location['country_name'];
+
+
+  $form = array();
   
-  $country_list = country_get_list();
-  $country_name = $country_list[$country_code];
+  $form['intro'] = array(
+    '#markup' => t('My current region is !continent_name.', array('!country_name' => $country_name, '!continent_name' => $continent_name)),
+  );
+  
+  $form['change_region'] = array(
+    '#title' => 'Change my region',
+    '#type' => 'select',
+    '#options' => array('NA' => 'America', 'EU' => 'Europe', 'AS' => 'Asia'),
+    '#default_value' => "$continent_code",
+  );
+  
+  $form['submit'] = array(
+    '#type' => 'submit',
+    '#value' => t('Change'),
+  );
+  
+  return $form;
+}
 
-  $continent_code = _hc_regions_country_to_continent($country_code);
 
-  return $country_name . " (continent " . $continent_code . ")";
 
+/**
+ * Drupal Form for selecting region - SUBMIT
+ */
+function hc_regions_select_region_form_submit(&$form, &$form_state) {
+
+  $user_location = $_SESSION['user_location'];
+  $values = $form_state['values'];
+  $new_continent_code = $values['change_region'];
+  $new_continent_name = _hc_regions_continent_code_to_continent_name($new_continent_code);
+
+  $new_user_location = array(
+    'country_code' => $user_location['country_code'],
+    'country_name' => $user_location['country_name'],
+    'continent_code' => $new_continent_code,
+    'continent_name' => $new_continent_name,
+  );
+  
+  $_SESSION['user_location'] = $new_user_location;
+
+}
+
+
+/**
+ * Helper function for linking continent code to continent name 
+ */
+function _hc_regions_continent_code_to_continent_name($continent_code) {
+  switch ($continent_code) {
+    case 'NA':
+    case 'SA':
+    case 'AF':
+    case 'OC':
+    default:
+      $continent_name = "America";
+      break;
+    case 'EU':
+      $continent_name = "Europe";
+      break;
+    case 'AS':
+      $continent_name = "Asia";
+      break;
+  }
+  
+  return $continent_name;
 }
 
 
