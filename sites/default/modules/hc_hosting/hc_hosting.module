@@ -55,11 +55,5 @@ function _hc_hosting_form_submit(&$form, &$form_state) {
   
   	$line_item->field_course_line_item_hosting->set('');
   	$line_item->save();
-  } else {
-    print "<pre>";
-    print_r($line_item);
-    print "</pre>";
-    exit();
   }
-  
 }
