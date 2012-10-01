@@ -20,13 +20,14 @@
 function hc_purchasable_form_alter(&$form, &$form_state, $form_id) {
 
   if (strstr($form_id, 'commerce_cart_add_to_cart_form')) {
-  
-  
-  	$product_id = $form['product_id']['#value'];
+
+//    $product_id = $form['product_id']['#value'];
+  	$product_id = isset($form['product_id']['#value']) ? $form['product_id']['#value'] : $form['product_id']['#default_value'];
 
   	// get nid from product id
   	$product_fields = entity_metadata_wrapper('commerce_product', $product_id);
   	$product_type = $product_fields->type->value();
+  
   
   	if ($product_type == 'team_package') {
   	  $table = "field_data_field_team_course_package";
