@@ -1,0 +1,117 @@
+<?php
+
+
+/**
+ * @file
+ *
+ *
+ */
+
+/************************************************************************************
+ * Drupal Hook Implementations
+ ***********************************************************************************/
+
+/**
+ * Implements hook_form_alter
+ *
+ * We do not want to show the regular form for products (i.e. "product displays") that
+ * cannot be purchased.
+ */
+function hc_purchasable_form_alter(&$form, &$form_state, $form_id) {
+
+  if (strstr($form_id, 'commerce_cart_add_to_cart_form')) {
+    // First, get the node, containing the "can be purchased" field
+    if (arg(0) == 'node' && (is_numeric(arg(1)))) {
+			$nid = arg(1);
+			$fields = entity_metadata_wrapper('node', $nid);
+			$can_purchase = $fields->field_can_purchase->value();
+    }
+    
+    if (!$can_purchase) {
+    
+    	// change the submit button
+    	unset($form['submit']);
+    	$form['inquiry_submit'] = array(
+    	  '#type' => 'button',
+    	  '#value' => 'Inquiry',
+    	  '#ajax' => array(
+	    	  'callback' => '_hc_purchasable_ajax',
+					'wrapper' => 'contact-block-inquiry',
+					'method' => 'replace',
+					'effect' => 'fade',
+				),
+    	);
+
+			$form['contact_block'] = array(
+			  '#type' => 'markup',
+			  '#markup' => '<div id="contact-block-inquiry"></div>',
+			);
+    
+    
+    	// change the submit function to redirect to the "inquiry form"
+      $form['#submit'][0] = '_hc_purchasable_submit_product_cant_purchase';
+
+    }
+  }
+
+}
+
+
+/**
+ * Implements hook_field_display_alter
+ */
+function hc_purchasable_field_display_alter(&$display, $context) {
+}
+
+
+/**
+ * Implements hook_preprocess_node
+ */
+function hc_purchasable_preprocess_node(&$variables) {
+	
+	if (isset($variables['nid']) && isset($variables['type']) && ($variables['type'] == 'individual_course_display' || $variables['type'] == 'team_course_display')) {
+		$nid = $variables['nid'];
+
+		$fields = entity_metadata_wrapper('node', $nid);
+		$can_purchase = $fields->field_can_purchase->value();
+		
+		if (!$can_purchase) {
+
+		  unset($variables['content']['product:commerce_price']);
+		  unset($variables['content']['product:commerce_price_eur']);
+		}
+  }
+}
+
+
+
+
+
+/************************************************************************************
+ * Internal Helper Functions
+ ***********************************************************************************/
+
+/**
+ * AJAX callback
+ */
+function _hc_purchasable_ajax() {
+
+  $output = module_invoke('webform', 'block_view', 'client-block-19');
+  return $output['content'];
+
+}
+
+
+/** 
+ * Custom submit function for "add to cart" form on products
+ * that can't be purchased
+ */
+function _hc_purchasable_submit_product_cant_purchase(&$form, &$form_state) {
+/*
+	$values = $form_state['values'];
+	$product_id = $values['product_id'];
+	$url = url('inquiry', array('absolute' => TRUE, 'query' => array('pid' => $product_id)));
+	drupal_goto($url);
+*/
+  exit('dit moet niet aangeroepen worden');
+}

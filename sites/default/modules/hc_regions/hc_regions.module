@@ -109,36 +109,6 @@ function hc_regions_block_view($delta = "") {
 }
 
 
-/**
- * Implements hook_form_alter
- *
- * We do not want to show the regular form for products (i.e. "product displays") that
- * cannot be purchased.
- */
-function hc_regions_form_alter(&$form, &$form_state, $form_id) {
-
-  if (strstr($form_id, 'commerce_cart_add_to_cart_form')) {
-    // First, get the node, containing the "can be purchased" field
-    if (arg(0) == 'node' && (is_numeric(arg(1)))) {
-			$nid = arg(1);
-			$fields = entity_metadata_wrapper('node', $nid);
-			$can_purchase = $fields->field_can_purchase->value();
-    }
-    
-    if (!$can_purchase) {
-    
-    	// change the submit button
-    	$form['submit']['#value'] = 'Inquiry';
-    
-    	// change the submit function to redirect to the "inquiry form"
-      $form['#submit'][0] = '_hc_regions_submit_product_cant_purchase';
-    
-    }
-  }
-
-}
-
-
 /************************************************************************************
  * Internal Helper Functions
  ***********************************************************************************/
@@ -148,9 +118,13 @@ function hc_regions_form_alter(&$form, &$form_state, $form_id) {
  * that can't be purchased
  */
 function _hc_regions_submit_product_cant_purchase(&$form, &$form_state) {
-
-	exit('hier');
-
+/*
+	$values = $form_state['values'];
+	$product_id = $values['product_id'];
+	$url = url('inquiry', array('absolute' => TRUE, 'query' => array('pid' => $product_id)));
+	drupal_goto($url);
+*/
+  exit('dit moet niet aangeroepen worden');
 }
 
 

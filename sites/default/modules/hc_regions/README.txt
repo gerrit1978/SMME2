@@ -8,7 +8,6 @@ This region module does a few things:
 - it alters the default views for training courses/packages. By default, only the courses for the current selected region are shown
   to users
 - it alters the view mode and Add to Cart form for specific products (currently team packages in Europe & Asia), in that way that the 
-  prices are not shown, and products without dates cannot be added to a cart, but instead lead to another form in which users can
-  propose dates (instead of selecting a date and purchasing the course directly for that date)
-
+  prices are not shown
+  
 # http://drupal.org/node/1259914

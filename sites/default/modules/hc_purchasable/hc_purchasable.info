@@ -1,0 +1,5 @@
+name           = (Un)Purchasable Products
+description    = Provides functionality to inquire about products instead of purchasing them
+core           = 7.x
+version        = 7.x-1.0
+package        = HedgeComm
