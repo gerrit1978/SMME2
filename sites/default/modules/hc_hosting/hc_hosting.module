@@ -14,8 +14,6 @@ function hc_hosting_form_alter(&$form, &$form_state, $form_id) {
 
   	$product_id = isset($form['product_id']['#value']) ? $form['product_id']['#value'] : $form['product_id']['#default_value'];
 
-
-
   	// get nid from product id
   	$product_fields = entity_metadata_wrapper('commerce_product', $product_id);
 
@@ -32,7 +30,36 @@ function hc_hosting_form_alter(&$form, &$form_state, $form_id) {
       if ($term_allow_hosting != 1) {
          unset($form['line_item_fields']['field_course_line_item_hosting']);
       }
+      
     }
+    
+    // extra submit handler
+    $form['#submit'][] = '_hc_hosting_form_submit';
+    
+    
+  }
+  
+}
+
+
+/**
+ * Helper submit function
+ */
+function _hc_hosting_form_submit(&$form, &$form_state) {
+  
+  $values = $form_state['values'];
+  $line_item = $form_state['line_item'];
+  
+  if (!isset($values['line_item_fields']['field_course_line_item_hosting'])) {
+    $line_item = entity_metadata_wrapper('commerce_line_item', $line_item);
+  
+  	$line_item->field_course_line_item_hosting->set('');
+  	$line_item->save();
+  } else {
+    print "<pre>";
+    print_r($line_item);
+    print "</pre>";
+    exit();
   }
   
 }

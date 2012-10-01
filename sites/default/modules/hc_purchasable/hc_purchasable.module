@@ -21,56 +21,53 @@ function hc_purchasable_form_alter(&$form, &$form_state, $form_id) {
 
   if (strstr($form_id, 'commerce_cart_add_to_cart_form')) {
 
-//    $product_id = $form['product_id']['#value'];
+
   	$product_id = isset($form['product_id']['#value']) ? $form['product_id']['#value'] : $form['product_id']['#default_value'];
 
   	// get nid from product id
   	$product_fields = entity_metadata_wrapper('commerce_product', $product_id);
   	$product_type = $product_fields->type->value();
-  
-  
-  	if ($product_type == 'team_package') {
+ 
+    // only for team package products
+    if ($product_fields->type->value() == 'team_package') {
   	  $table = "field_data_field_team_course_package";
   	  $field = "field_team_course_package_product_id";
-  	}
-  	if ($product_type == 'individual_package') {
-  	  $table = "field_data_field_course_package";
-  	  $field = "field_course_package_product_id";
-  	}
+
   	
-  	$result = db_query("SELECT entity_id FROM {$table} WHERE $field=:product_id;", array(':product_id' => $product_id));
-  	foreach ($result as $row) {
-			$nid = $row->entity_id;
-  	}
-
-		$fields = entity_metadata_wrapper('node', $nid);
-		$can_purchase = $fields->field_can_purchase->value();
-
-    if (!$can_purchase) {
-    
-    	// change the submit button
-    	unset($form['submit']);
-    	$form['inquiry_submit'] = array(
-    	  '#type' => 'button',
-    	  '#value' => 'Inquiry',
-    	  '#ajax' => array(
-	    	  'callback' => '_hc_purchasable_ajax',
-					'wrapper' => 'contact-block-inquiry',
-					'method' => 'replace',
-					'effect' => 'fade',
-				),
-    	);
-
-			$form['contact_block'] = array(
-			  '#type' => 'markup',
-			  '#markup' => '<div id="contact-block-inquiry"></div>',
-			);
-    
-    
-    	// change the submit function to redirect to the "inquiry form"
-      $form['#submit'][0] = '_hc_purchasable_submit_product_cant_purchase';
-
-    }
+    	$result = db_query("SELECT entity_id FROM {$table} WHERE $field=:product_id;", array(':product_id' => $product_id));
+    	foreach ($result as $row) {
+  			$nid = $row->entity_id;
+    	}
+  
+  		$fields = entity_metadata_wrapper('node', $nid);
+  		$can_purchase = $fields->field_can_purchase->value();
+  
+      if (!$can_purchase) {
+      
+      	// change the submit button
+      	unset($form['submit']);
+      	$form['inquiry_submit'] = array(
+      	  '#type' => 'button',
+      	  '#value' => 'Inquiry',
+      	  '#ajax' => array(
+  	    	  'callback' => '_hc_purchasable_ajax',
+  					'wrapper' => 'contact-block-inquiry',
+  					'method' => 'replace',
+  					'effect' => 'fade',
+  				),
+      	);
+  
+  			$form['contact_block'] = array(
+  			  '#type' => 'markup',
+  			  '#markup' => '<div id="contact-block-inquiry"></div>',
+  			);
+      
+      
+      	// change the submit function to redirect to the "inquiry form"
+        $form['#submit'][0] = '_hc_purchasable_submit_product_cant_purchase';
+  
+      }
+    } 
   }
 
 }
@@ -88,14 +85,13 @@ function hc_purchasable_field_display_alter(&$display, $context) {
  */
 function hc_purchasable_preprocess_node(&$variables) {
 	
-	if (isset($variables['nid']) && isset($variables['type']) && ($variables['type'] == 'individual_course_display' || $variables['type'] == 'team_course_display')) {
+	if (isset($variables['nid']) && isset($variables['type']) && $variables['type'] == 'team_course_display') {
 		$nid = $variables['nid'];
 
 		$fields = entity_metadata_wrapper('node', $nid);
 		$can_purchase = $fields->field_can_purchase->value();
 		
 		if (!$can_purchase) {
-
 		  unset($variables['content']['product:commerce_price']);
 		  unset($variables['content']['product:commerce_price_eur']);
 		}
