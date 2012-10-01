@@ -20,13 +20,31 @@
 function hc_purchasable_form_alter(&$form, &$form_state, $form_id) {
 
   if (strstr($form_id, 'commerce_cart_add_to_cart_form')) {
-    // First, get the node, containing the "can be purchased" field
-    if (arg(0) == 'node' && (is_numeric(arg(1)))) {
-			$nid = arg(1);
-			$fields = entity_metadata_wrapper('node', $nid);
-			$can_purchase = $fields->field_can_purchase->value();
-    }
-    
+  
+  
+  	$product_id = $form['product_id']['#value'];
+
+  	// get nid from product id
+  	$product_fields = entity_metadata_wrapper('commerce_product', $product_id);
+  	$product_type = $product_fields->type->value();
+  
+  	if ($product_type == 'team_package') {
+  	  $table = "field_data_field_team_course_package";
+  	  $field = "field_team_course_package_product_id";
+  	}
+  	if ($product_type == 'individual_package') {
+  	  $table = "field_data_field_course_package";
+  	  $field = "field_course_package_product_id";
+  	}
+  	
+  	$result = db_query("SELECT entity_id FROM {$table} WHERE $field=:product_id;", array(':product_id' => $product_id));
+  	foreach ($result as $row) {
+			$nid = $row->entity_id;
+  	}
+
+		$fields = entity_metadata_wrapper('node', $nid);
+		$can_purchase = $fields->field_can_purchase->value();
+
     if (!$can_purchase) {
     
     	// change the submit button
