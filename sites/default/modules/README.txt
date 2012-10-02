@@ -4,3 +4,4 @@ This directory contains the custom modules.
 - HC_PURCHASABLE provides functionality for "non-purchasable products", i.e. courses in Europe & Asia (Dubai) without fixed dates where customers can suggest a date
 - HC_REGIONS provides functionality for showing/hiding content based on the current region of the site visitor
 - HC_HOSTING provides functionality to allow users to indicate if they want SMME to host the course, or to host it theirselves.
+- HC_COUPON provides coupon-related functionality (e.g. custom rules condition for checking for region when validating a coupon).
