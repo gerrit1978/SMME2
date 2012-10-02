@@ -1,4 +1,4 @@
-info        = Hosting
+name        = Hosting
 description = Provides hosting-related functionality
 core        = 7.x
 version     = 7.x-1.0
