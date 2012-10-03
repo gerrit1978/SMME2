@@ -84,7 +84,7 @@ function hc_package_types__blank_calendar__submit(&$form, &$form_state) {
   $product_type = $fields->type->value();
 
   $package_type = $fields->field_package_type->value();
-  $package_dates = $fields->field_package_dates->value();
+  $package_dates = $fields->field_package_date->value();
 
 	if ($product_type == 'team_package') {
 

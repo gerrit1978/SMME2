@@ -61,7 +61,7 @@ function hc_package_types__filled_in_calendar__validate(&$form, &$form_state) {
   $fields = entity_metadata_wrapper('commerce_product', $product_id);
 
   $package_type = $fields->field_package_type->value();
-  $package_dates = $fields->field_package_dates->value();
+  $package_dates = $fields->field_package_date->value();
 
   $flag = FALSE;
   foreach ($package_dates as $item) {
@@ -76,7 +76,19 @@ function hc_package_types__filled_in_calendar__validate(&$form, &$form_state) {
     form_set_error('product_package_type', t('Please make a valid choice'));
     return FALSE;
   } else {
+    // check if the chosen date is in the future
+    $chosen_time = strtotime($chosen_date);
+  
+  	$now = time();
+  	
+  	// difference between chosen_time and now must be NEGATIVE for future dates
+  	if (($now - $chosen_time) > 0) {
+  	  form_set_error('product_package_type', t('Please make sure you choose a date in the future.'));
+  	  return FALSE;
+  	}
+  
     return TRUE;
+  
   }
 
 }
@@ -97,7 +109,7 @@ function hc_package_types__filled_in_calendar__submit(&$form, &$form_state) {
   $product_type = $fields->type->value();
 
   $package_type = $fields->field_package_type->value();
-  $package_dates = $fields->field_package_dates->value();
+  $package_dates = $fields->field_package_date->value();
 
 	if ($product_type == 'team_package') {
 	  if (is_array($package_dates)) {
@@ -132,7 +144,7 @@ function hc_package_types__filled_in_calendar__submit(&$form, &$form_state) {
  */ 
 function _hc_package_types__filled_in_calendar__get_dates($product_id) {
   $fields = entity_metadata_wrapper('commerce_product', $product_id);
-  $dates = $fields->field_package_dates->value();
+  $dates = $fields->field_package_date->value();
   
   foreach ($dates as $date) {
     $time = strtotime($date['value']);

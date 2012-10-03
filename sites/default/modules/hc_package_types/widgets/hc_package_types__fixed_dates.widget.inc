@@ -53,7 +53,7 @@ function hc_package_types__fixed_dates__validate(&$form, &$form_state) {
   $fields = entity_metadata_wrapper('commerce_product', $product_id);
 
   $package_type = $fields->field_package_type->value();
-  $package_dates = $fields->field_package_dates->value();
+  $package_dates = $fields->field_package_date->value();
 
   $product_type = $fields->type->value();
   
@@ -83,7 +83,7 @@ function hc_package_types__fixed_dates__submit(&$form, &$form_state) {
   $product_type = $fields->type->value();
 
   $package_type = $fields->field_package_type->value();
-  $package_dates = $fields->field_package_dates->value();
+  $package_dates = $fields->field_package_date->value();
 
 	if ($product_type == 'team_package') {
 	  $line_item_date = $package_dates[$product_package_type]['value'];
@@ -110,7 +110,7 @@ function _hc_package_types__fixed_dates__options($product_id) {
   $options = array();
   
   $fields = entity_metadata_wrapper('commerce_product', $product_id);
-  $dates = $fields->field_package_dates->value();
+  $dates = $fields->field_package_date->value();
   
   if (is_array($dates)) {
     foreach ($dates as $date) {

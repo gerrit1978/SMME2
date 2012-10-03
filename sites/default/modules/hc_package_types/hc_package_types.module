@@ -166,8 +166,9 @@ function _hc_package_submit(&$form, &$form_state) {
 
   // for individual packages
 	if ($product_type == 'individual_package') {
-	  $date = $fields->field_session_date->value();
+	  $date = $fields->field_session_dates->value();
 	  $line_item_date = $date['value'];
+	  $line_item_time = strtotime($line_item_date);
 
     // get line item
     $line_item = entity_metadata_wrapper('commerce_line_item', $form_state['line_item']);

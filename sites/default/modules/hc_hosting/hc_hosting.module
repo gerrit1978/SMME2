@@ -48,11 +48,16 @@ function hc_hosting_form_alter(&$form, &$form_state, $form_id) {
 function _hc_hosting_form_submit(&$form, &$form_state) {
   
   $values = $form_state['values'];
+  $type = $form_state['default_product']->type;
+  if ($type != "team_package") {
+    return;
+  }
+
   $line_item = $form_state['line_item'];
   
   if (!isset($values['line_item_fields']['field_course_line_item_hosting'])) {
     $line_item = entity_metadata_wrapper('commerce_line_item', $line_item);
-  
+      
   	$line_item->field_course_line_item_hosting->set('');
   	$line_item->save();
   }
