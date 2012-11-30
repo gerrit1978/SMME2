@@ -6,3 +6,4 @@ This directory contains the custom modules.
 - HC_HOSTING provides functionality to allow users to indicate if they want SMME to host the course, or to host it theirselves.
 - HC_COUPON provides coupon-related functionality (e.g. custom rules condition for checking for region when validating a coupon).
 - HC_CURRENCY provides functionality for handling multi-currencies, in addition to commerce_multicurrency. Based on $_SESSION['user_location'], it shows EURO or USD prices as provided with commerce_multicurrency module
+- HC_CALENDAR provides calendar-related functionality, i.e. the calendar pages for the different regions and course types.
