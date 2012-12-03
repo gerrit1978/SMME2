@@ -1,0 +1,112 @@
+<?php
+
+/** 
+ * Implements hook_menu
+ */
+function hc_courses_menu() {
+  $items = array();
+  
+  $items['admin/config/courses'] = array(
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('hc_courses_settings_form'),
+    'title' => t('General course Settings'),
+		'access arguments' => array('administer courses'),
+		'file' => 'hc_courses.admin.inc'
+  );
+  
+  return $items;
+ 
+}
+
+
+/**
+ * Implements hook_menu_alter
+ */
+function hc_courses_menu_alter(&$items) {
+  $items['taxonomy/term/%taxonomy_term']['page callback'] = 'hc_courses_taxonomy_term_page';
+  $items['taxonomy/term/%taxonomy_term']['title callback'] = 'hc_courses_taxonomy_term_title';
+}
+
+
+/**
+ * Implements hook_permission
+ */
+function hc_courses_permission() {
+  return array(
+    'administer courses' => array(
+      'title' => t('Administer Courses'),
+      'description' => t('Perform administration tasks on courses'),
+    ),
+  );
+}
+
+
+/**
+ * Implements hook_theme
+ */
+function hc_courses_theme() {
+  return array(
+    'hc_courses_course_domain' => array(
+      'variables' => array(
+        'tid' => NULL,
+      ),
+      'template' => 'hc_courses_course_domains',
+    ),
+  );
+}
+
+
+/**
+ * Preprocess function
+ *
+ * In this function, we define the variables to use in the tpl.php
+ *
+ * - full taxonomy term (you never know)
+ * - description: term description
+ * - individual packages: the individual course packages for this term (view "Courses" - block_1 display)
+ * - team packages: the team course packages for this term (view "Courses" - block_2 display)
+ */
+function template_preprocess_hc_courses_course_domain(&$vars) {
+	
+	$term = taxonomy_term_load($vars['tid']);
+
+	$term_wrapper = entity_metadata_wrapper('taxonomy_term', $vars['tid']);
+  $description = $term_wrapper->description->value();
+
+	$vars['term'] = $term;
+	$vars['description'] = array(
+	  '#markup' => $description
+	);
+	$vars['individual_packages'] = array(
+	  '#markup' => views_embed_view('courses', 'block_1', $term->tid),
+	);
+	$vars['team_packages'] = array(
+	  '#markup' => views_embed_view('courses', 'block_2', $term->tid),
+	);
+
+
+}
+
+/**
+ * Menu callback for the taxonomy term page
+ */
+function hc_courses_taxonomy_term_page($term) {
+
+  $hc_courses_domain_vocabulary = variable_get('hc_courses_domain_vocabulary', 1);
+  
+  if ($term->vid == $hc_courses_domain_vocabulary) {
+		return theme('hc_courses_course_domain', $term->tid);
+  }
+
+  return taxonomy_term_page($term);
+}
+
+/**
+ * Menu callback for the taxonomy term title
+ */
+function hc_courses_taxonomy_term_title($term) {
+
+  $title = t('Courses for @domain', array('@domain' => $term->name));
+
+  return $title;
+}

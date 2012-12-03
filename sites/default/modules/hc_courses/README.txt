@@ -1,0 +1,1 @@
+This module implements hook_menu_alter on the "taxonomy/term/%taxonomy_term" page to make sure our custom view (with both individual as well as team packages) is shown instead of the default Taxonomy Term page.

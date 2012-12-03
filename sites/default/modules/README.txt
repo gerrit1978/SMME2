@@ -7,3 +7,4 @@ This directory contains the custom modules.
 - HC_COUPON provides coupon-related functionality (e.g. custom rules condition for checking for region when validating a coupon).
 - HC_CURRENCY provides functionality for handling multi-currencies, in addition to commerce_multicurrency. Based on $_SESSION['user_location'], it shows EURO or USD prices as provided with commerce_multicurrency module
 - HC_CALENDAR provides calendar-related functionality, i.e. the calendar pages for the different regions and course types.
+- HC_COURSES provides general courses-related functionality. Currently, this makes sure the right View is used for pages /courses/[course domain] (= alias for taxonomy/term/%term)
