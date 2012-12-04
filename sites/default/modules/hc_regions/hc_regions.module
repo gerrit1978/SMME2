@@ -223,3 +223,37 @@ function _hc_regions_continent_code_to_continent_name($continent_code) {
   
   return $continent_name;
 }
+
+
+/**
+ * Helper function for price format
+ *
+ * This function returns an array with variables to use
+ * when calculating/formatting/displaying price
+ *
+ */
+function _hc_regions_currency_format() {
+  
+  $return = array();
+  $user_location = $_SESSION['user_location'];
+  
+  $continent_code = $user_location['continent_code'];
+  
+  switch ($continent_code) {
+    case 'NA':
+    case 'SA':
+    case 'AF':
+    case 'OC':
+    case 'AS':
+    default:
+      $return['field'] = 'commerce_price';
+      $return['currency'] = 'USD';
+      break;
+    case 'EU':
+      $return['field'] = 'commerce_price_eur';
+      $return['currency'] = 'EUR';
+  }
+  
+  return $return;
+  
+}

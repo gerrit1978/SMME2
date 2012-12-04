@@ -1,5 +1,9 @@
 <?php
 
+/***********************************
+ * Drupal Hook Implementations
+ **********************************/
+
 /** 
  * Implements hook_menu
  */
@@ -50,14 +54,46 @@ function hc_courses_theme() {
       'variables' => array(
         'tid' => NULL,
       ),
-      'template' => 'hc_courses_course_domains',
+      'template' => 'hc-courses-course-domains',
     ),
+    'hc_courses_course_display_with_products' => array(
+      'variables' => array(
+        'nid' => NULL,
+      ),
+      'template' => 'hc-courses-course-display-with-products',
+    ),
+    
   );
 }
 
 
 /**
- * Preprocess function
+* Implements hook_entity_info_alter().
+*/
+function hc_courses_entity_info_alter(&$entity_info) {
+  $entity_info['node']['view modes']['product_display_with_products'] = array(
+    'label' => t('Product display with overview of commerce products'),
+    'custom settings' => TRUE,
+  );
+} 
+
+
+/**
+* Implements hook_node_view().
+*/
+function hc_courses_preprocess_node(&$vars) {
+  if($vars['view_mode'] == 'product_display_with_products') {
+    $vars['content'] = array('#markup' => theme('hc_courses_course_display_with_products', array('nid' => $vars['nid'])));
+  }
+} 
+
+/***********************************
+ * Callback & helper functions
+ **********************************/
+
+
+/**
+ * Preprocess function for course domain page (e.g. ITIL, ISO…)
  *
  * In this function, we define the variables to use in the tpl.php
  *
@@ -84,8 +120,50 @@ function template_preprocess_hc_courses_course_domain(&$vars) {
 	  '#markup' => views_embed_view('courses', 'block_2', $term->tid),
 	);
 
+}
+
+
+/**
+ * Preprocess function for overview courses (e.g. ITIL, ISO…)
+ *
+ */
+function template_preprocess_hc_courses_course_display_with_products(&$vars) {
+
+  // get product display node
+  $node_wrapper = entity_metadata_wrapper('node', $vars['nid']);
+    
+  $field_course_package = $node_wrapper->field_course_package->value();
+
+  $rows = array();
+  
+  foreach ($field_course_package as $course_package) {
+    $course_package_wrapper = entity_metadata_wrapper('commerce_product', $course_package);
+
+    // product location
+    $product_location = $course_package_wrapper->field_session_location->value();
+    
+    // product price: use the right currency and price format!
+    $price_values = _hc_regions_currency_format();
+
+    $price_amount = $course_package_wrapper->$price_values['field']->amount->value();
+    $price_currency = $price_values['currency'];
+
+    $product_formatted_price = commerce_currency_format($price_amount, $price_currency);
+    
+    // dates
+    $product_session_dates = $course_package_wrapper->field_session_dates->value();
+    $product_session_time = strtotime($product_session_dates['value']); // TODO: timezone!!! Date format!!!
+    $product_session_final_date = date('d.m.Y H:i', $product_session_time);
+
+    $rows[] = array($product_location, $product_session_final_date, $product_formatted_price);
+    
+  }
+  
+  $vars['products'] = theme('table', array('rows' => $rows));
 
 }
+
+
 
 /**
  * Menu callback for the taxonomy term page
